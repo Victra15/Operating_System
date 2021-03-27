@@ -23,17 +23,20 @@ private:
 	QueueHeader readyQueue;
 	int deviceQueueCounter;
 	QueueHeader deviceQueue;
-	QueueHeader jobQueue;
+	queue<PCB*> jobQueue;
 public:
-	Scheduler(QueueHeader _jobQueue);
+	Scheduler(queue<PCB*>_jobQueue);
 	
 	void start();
+
+	void IOProcess_run();
 	
 	void admitted();
 	void scheduler_dispatch();
 	void interrupt();
 	void IOWait();
 	void IOCompletion();
+	void exit();
 
 	void printProcess();
 };
