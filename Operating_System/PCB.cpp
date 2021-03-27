@@ -1,7 +1,7 @@
 #include "PCB.h"
 
 
-PCB::PCB(string _Pname, int _PID, int _total_job)
+PCB::PCB(string _Pname, int _PID, int _total_job, bool _IORequire, int _IORequireTime)
 {
 	Pname = _Pname;
 	Pstate = NEW;
@@ -12,6 +12,12 @@ PCB::PCB(string _Pname, int _PID, int _total_job)
 		total_job = _total_job;
 	else
 		total_job = 0;
+	IORequire = _IORequire;
+
+	if (IORequireTime > 0 && IORequireTime < total_job)
+		IORequireTime = _IORequireTime;
+	else
+		IORequireTime = 0;
 }
 
 
@@ -65,6 +71,20 @@ int PCB::getTotal_job()
 
 
 
+bool PCB::getIORequire()
+{
+	return IORequire;
+}
+
+
+
+int PCB::getIORequireTime()
+{
+	return IORequireTime;
+}
+
+
+
 void PCB::setPname(string _Pname)
 {
 	Pname = _Pname;
@@ -103,4 +123,18 @@ void PCB::setCurrent_job(int _current_job)
 void PCB::setTotal_job(int _total_job)
 {
 	total_job = _total_job;
+}
+
+
+
+void PCB::setIORequire(bool _IORequire)
+{
+	IORequire = _IORequire;
+}
+
+
+
+void PCB::setIORequireTime(int _IORequireTime)
+{
+	IORequireTime = _IORequireTime;
 }

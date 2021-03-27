@@ -19,13 +19,22 @@ class Scheduler
 {
 private:
 	PCB* runningPCB;
+	int readyQueueCounter;
 	QueueHeader readyQueue;
+	int deviceQueueCounter;
 	QueueHeader deviceQueue;
 	QueueHeader jobQueue;
 public:
 	Scheduler(QueueHeader _jobQueue);
+	
 	void start();
-	void IORequest();
+	
+	void admitted();
+	void scheduler_dispatch();
+	void interrupt();
+	void IOWait();
+	void IOCompletion();
+
 	void printProcess();
 };
 
