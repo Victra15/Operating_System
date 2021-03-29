@@ -16,6 +16,7 @@ void Scheduler::start()
 		IOCompletion();
 		admitted();
 		scheduler_dispatch();
+		IOCompletion();
 		admitted();
 
 		cout << "#" << runningPCB->getPname() << " Process running..." << endl;
@@ -195,11 +196,12 @@ void Scheduler::IOCompletion()
 		}
 		readyQueue.tail = deviceQueue.head;
 		readyQueue.tail->setPstate(READY);
-
+		
 		if (deviceQueue.head == deviceQueue.tail)
 			deviceQueue.tail = NULL;
 		
 		deviceQueue.head = deviceQueue.head->getPointer();
+		readyQueue.tail->setPointer(NULL);
 	}
 }
 
