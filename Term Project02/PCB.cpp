@@ -1,27 +1,28 @@
 #include "PCB.h"
 
 
-PCB::PCB(string _Pname, int _PID, int _total_job, bool _IORequire, int _IORequireTime, int _total_IO_job)
+PCB::PCB(string _Pname, int _PID, int _arrival_time, int _burst_time, bool _IORequire, int _IORequireTime, int _IO_burst_time)
 {
 	Pname = _Pname;
 	Pstate = NEW;
 	PID = _PID;
-	current_job = 0;
+	arrival_time = _arrival_time;
+	current_burst_time = 0;
 
-	if (_total_job > 0)
-		total_job = _total_job;
+	if (_burst_time > 0)
+		burst_time = _burst_time;
 	else
-		total_job = 0;
+		burst_time = 0;
 
 	IORequire = _IORequire;
 
-	if (_IORequireTime > 0 && _IORequireTime < total_job)
+	if (_IORequireTime > 0 && _IORequireTime < burst_time)
 		IORequireTime = _IORequireTime;
 	else
 		IORequireTime = 0;
 
-	total_IO_job = _total_IO_job;
-	current_IO_job = 0;
+	IO_burst_time = _IO_burst_time;
+	current_IO_burst_time = 0;
 	IOComplete = true;
 }
 
@@ -30,8 +31,8 @@ PCB::PCB(string _Pname, int _PID, int _total_job, bool _IORequire, int _IORequir
 void PCB::process_run()
 {
 	if(Pstate == RUNNING)
-		if (current_job < total_job)
-			current_job++;
+		if (current_burst_time < burst_time)
+			current_burst_time++;
 }
 
 
@@ -40,8 +41,8 @@ void PCB::IOProcess()
 {
 	if (IOComplete == false)
 	{
-		current_IO_job++;
-		if (total_IO_job == current_IO_job)
+		current_IO_burst_time++;
+		if (IO_burst_time == current_IO_burst_time)
 		{
 			IOComplete = true;
 		}
@@ -78,16 +79,16 @@ int PCB::getPID()
 
 
 
-int PCB::getCurrent_job()
+int PCB::getCurrent_burst_time()
 {
-	return current_job;
+	return current_burst_time;
 }
 
 
 
-int PCB::getTotal_job()
+int PCB::getBurst_time()
 {
-	return total_job;
+	return burst_time;
 }
 
 
@@ -113,16 +114,22 @@ bool PCB::getIOComplete()
 
 
 
-int PCB::getTotal_IO_job()
+int PCB::getIO_burst_time()
 {
-	return total_IO_job;
+	return IO_burst_time;
 }
 
 
 
-int PCB::getCurrent_IO_job()
+int PCB::getCurrent_IO_burst_time()
 {
-	return current_IO_job;
+	return current_IO_burst_time;
+}
+
+
+int PCB::getArrival_time()
+{
+	return arrival_time;
 }
 
 
@@ -155,16 +162,16 @@ void PCB::setPID(int _PID)
 
 
 
-void PCB::setCurrent_job(int _current_job)
+void PCB::setCurrent_burst_time(int _current_burst_time)
 {
-	current_job = _current_job;
+	current_burst_time = _current_burst_time;
 }
 
 
 
-void PCB::setTotal_job(int _total_job)
+void PCB::setBurst_time(int _burst_time)
 {
-	total_job = _total_job;
+	burst_time = _burst_time;
 }
 
 

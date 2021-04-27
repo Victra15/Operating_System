@@ -1,9 +1,8 @@
 #pragma once
 
-#define READYQUEUE_SIZE 3
-#define TIME_FOR_ONE_PROCESS 5
-
+#define READYQUEUE_SIZE 6
 #include <iostream>
+#include <vector>
 #include <queue>
 #include "PCB.h"
 
@@ -24,15 +23,21 @@ private:
 	int deviceQueueCounter;
 	QueueHeader deviceQueue;
 	queue<PCB*> jobQueue;
-public:
-	Scheduler(queue<PCB*>_jobQueue);
+	vector<PCB*> processVector;
 	
-	void start();
+public:
+	Scheduler(vector<PCB*> _processVector);
+	
+	void First_Come_First_Served_start();
+	void Preemtive_Shortest_Job_First_start();
+	void Round_Robin_start(int time_quantum);
 
 	void IOProcess_run();
 	
+	void SJF_admitted();
 	void admitted();
 	void scheduler_dispatch();
+	void SJF_interrupt();
 	void interrupt();
 	void IOWait();
 	void IOCompletion();

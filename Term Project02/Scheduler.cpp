@@ -1,61 +1,219 @@
 #include "Scheduler.h"
 #include <Windows.h>
-Scheduler::Scheduler(queue<PCB*> _jobQueue)
+Scheduler::Scheduler(vector<PCB*> _processVector)
 {
-	jobQueue = _jobQueue;
+	processVector = _processVector;
 	runningPCB = NULL;
 	readyQueueCounter = 0;
 	deviceQueueCounter = 0;
 }
 
-
-void Scheduler::start()
+void Scheduler::First_Come_First_Served_start()
 {
-	while(!jobQueue.empty())
+	int time_count = 0;
+	int total_waiting_time = 0;
+	vector<int> processWaitingTime(processVector.size(), 0);
+
+	while (true)
 	{
+		for (vector<PCB*>::iterator iter = processVector.begin(); iter != processVector.end(); iter++)
+			if ((*iter)->getArrival_time() == time_count)
+			{
+				jobQueue.push(*iter);
+			}
 		IOCompletion();
 		admitted();
 		scheduler_dispatch();
 		IOCompletion();
 		admitted();
 
-		cout << "#" << runningPCB->getPname() << " Process running..." << endl;
+		cout << "Current Time: " << time_count << endl;
 		printProcess();
-		cout << endl;
-		
 
-		for (int count = 0; count < TIME_FOR_ONE_PROCESS; count++)
+		//콘솔 정리용
+		//Sleep(100);
+		//cout << "\x1b[6A";
+		//
+
+		runningPCB->process_run();
+		IOProcess_run();
+		time_count++;
+		for (PCB* curr = readyQueue.head; curr != NULL; curr = curr->getPointer())
 		{
-			runningPCB->process_run();
-			cout << "\r";
-			cout << "Process " << "(" << runningPCB->getCurrent_job() << "/" << runningPCB->getTotal_job() << ")" << " completed. ";
-			IOProcess_run();
-			//Sleep(100);
-			if (runningPCB->getIORequire() && (runningPCB->getIORequireTime() == runningPCB->getCurrent_job()))
-			{
-				cout << endl << endl;
-				cout << "#" << runningPCB->getPname() << " I/O Event" << endl;
-				IOWait();
-				printProcess();
-				break;
-			}
-			if (runningPCB->getCurrent_job() == runningPCB->getTotal_job())
-			{
-				cout << endl << endl;
-				cout << "#" << runningPCB->getPname() << " Terminated." << endl;
-				runningPCB->setPstate(TERMINATED);
-				exit();
-				delete runningPCB;
-				runningPCB = NULL;
-				printProcess();
-				break;
-			}
+			processWaitingTime[curr->getPID()]++;
 		}
-		
-		if(readyQueue.tail != NULL)
-			interrupt();
 
-		cout << endl << endl;
+		if (runningPCB->getIORequire() && (runningPCB->getIORequireTime() == runningPCB->getCurrent_burst_time()))
+		{
+			IOWait();
+		}
+		if (runningPCB->getCurrent_burst_time() == runningPCB->getBurst_time())
+		{
+			runningPCB->setPstate(TERMINATED);
+			exit();
+			delete runningPCB;
+			runningPCB = NULL;
+		}
+
+		if (jobQueue.empty())
+		{
+			cout << "Current Time: " << time_count << endl;
+			printProcess();
+
+			cout << "waiting time" << endl;
+			for (int loop = 0; loop < processWaitingTime.size(); loop++)
+			{
+				cout << "process" << loop + 1 << " : " << processWaitingTime[loop] << endl;
+				total_waiting_time += processWaitingTime[loop];
+			}
+			cout << "total_waiting_time : " << total_waiting_time << endl;
+			cout << "average_waiting_time : " << double(total_waiting_time) / double(processWaitingTime.size()) << endl << endl;
+			
+			return;
+		}
+	}
+}
+
+void Scheduler::Preemtive_Shortest_Job_First_start()
+{
+	int time_count = 0;
+	int total_waiting_time = 0;
+	vector<int> processWaitingTime(processVector.size(), 0);
+	PCB* PCBPointer;
+
+	while (true)
+	{
+		for (vector<PCB*>::iterator iter = processVector.begin(); iter != processVector.end(); iter++)
+			if ((*iter)->getArrival_time() == time_count)
+			{
+				if (runningPCB != NULL && runningPCB->getBurst_time() - runningPCB->getCurrent_burst_time() > (*iter)->getBurst_time())
+					SJF_interrupt();
+				jobQueue.push(*iter);
+			}
+		IOCompletion();
+		SJF_admitted();
+		scheduler_dispatch();
+		IOCompletion();
+		SJF_admitted();
+		
+		cout << "Current Time: " << time_count << endl;
+		printProcess();
+
+		//콘솔 정리용
+		//Sleep(100);
+		//cout << "\x1b[6A";
+		//
+
+		runningPCB->process_run();
+		IOProcess_run();
+		time_count++;
+		for (PCB* curr = readyQueue.head; curr != NULL; curr = curr->getPointer())
+		{
+			processWaitingTime[curr->getPID()]++;
+		}
+
+		if (runningPCB->getIORequire() && (runningPCB->getIORequireTime() == runningPCB->getCurrent_burst_time()))
+		{
+			IOWait();
+		}
+		if (runningPCB->getCurrent_burst_time() == runningPCB->getBurst_time())
+		{
+			runningPCB->setPstate(TERMINATED);
+			exit();
+			delete runningPCB;
+			runningPCB = NULL;
+		}
+
+		if (jobQueue.empty())
+		{
+			cout << "Current Time: " << time_count << endl;
+			printProcess();
+
+			cout << "waiting time" << endl;
+			for (int loop = 0; loop < processWaitingTime.size(); loop++)
+			{
+				cout << "process" << loop + 1 << " : " << processWaitingTime[loop] << endl;
+				total_waiting_time += processWaitingTime[loop];
+			}
+			cout << "total_waiting_time : " << total_waiting_time << endl;
+			cout << "average_waiting_time : " << double(total_waiting_time) / double(processWaitingTime.size()) << endl << endl;
+
+			return;
+		}
+	}
+}
+
+
+void Scheduler::Round_Robin_start(int time_quantum)
+{
+	int time_count = 0;
+	int total_waiting_time = 0;
+	vector<int> processWaitingTime(processVector.size(), 0);
+
+	while (true)
+	{
+		for (vector<PCB*>::iterator iter = processVector.begin(); iter != processVector.end(); iter++)
+			if ((*iter)->getArrival_time() == time_count)
+			{
+				jobQueue.push(*iter);
+			}
+
+		IOCompletion();
+		admitted();
+		
+		if (time_count % time_quantum == 0)
+			interrupt();
+		
+		scheduler_dispatch();
+		IOCompletion();
+		admitted();
+
+		cout << "Current Time: " << time_count << endl;
+		printProcess();
+
+		
+		//콘솔 정리용
+		//Sleep(100);
+		//cout << "\x1b[6A";
+		//
+
+		runningPCB->process_run();
+		IOProcess_run();
+		time_count++;
+		for (PCB* curr = readyQueue.head; curr != NULL; curr = curr->getPointer())
+		{
+			processWaitingTime[curr->getPID()]++;
+		}
+
+		if (runningPCB->getIORequire() && (runningPCB->getIORequireTime() == runningPCB->getCurrent_burst_time()))
+		{
+			IOWait();
+		}
+		if (runningPCB->getCurrent_burst_time() == runningPCB->getBurst_time())
+		{
+			runningPCB->setPstate(TERMINATED);
+			exit();
+			delete runningPCB;
+			runningPCB = NULL;
+		}
+
+		
+		if (jobQueue.empty())
+		{
+			cout << "Current Time: " << time_count << endl;
+			printProcess();
+
+			cout << "waiting time" << endl;
+			for (int loop = 0; loop < processWaitingTime.size(); loop++)
+			{
+				cout << "process" << loop + 1 << " : " << processWaitingTime[loop] << endl;
+				total_waiting_time += processWaitingTime[loop];
+			}
+			cout << "total_waiting_time : " << total_waiting_time << endl;
+			cout << "average_waiting_time : " << double(total_waiting_time) / double(processWaitingTime.size()) << endl << endl;
+
+			return;
+		}
 	}
 }
 
@@ -71,7 +229,7 @@ void Scheduler::IOProcess_run()
 			if (!curr->getIOComplete())
 			{
 				curr->IOProcess();
-				cout << curr->getPname() << " I/O Process " << "(" << curr->getCurrent_IO_job() << "/" << curr->getTotal_IO_job() << ") completed.";
+				cout << curr->getPname() << " I/O Process " << "(" << curr->getCurrent_IO_burst_time() << "/" << curr->getIO_burst_time() << ") completed.";
 				if (curr->getIOComplete())
 				{
 					cout << endl << endl;
@@ -89,6 +247,59 @@ void Scheduler::IOProcess_run()
 	}
 }
 
+
+void Scheduler::SJF_admitted()
+{
+	queue<PCB*> new_jobQueue = jobQueue;
+	PCB* curr;
+
+	while (!new_jobQueue.empty() && readyQueueCounter < READYQUEUE_SIZE)
+	{
+		curr = new_jobQueue.front();
+		new_jobQueue.pop();
+
+		if (curr->getPstate() == NEW)
+		{
+			if (readyQueue.tail == NULL)
+			{
+				readyQueue.head = curr;
+				readyQueue.tail = curr;
+			}
+			else
+			{
+				if (readyQueue.head->getBurst_time() - readyQueue.head->getCurrent_burst_time() > curr->getBurst_time())
+				{
+					curr->setPointer(readyQueue.head);
+					readyQueue.head = curr;
+				}
+				else
+				{
+					for (PCB* iter = readyQueue.head; iter != NULL; iter = iter->getPointer())
+					{
+						if (iter->getPointer() != NULL)
+						{
+							if (iter->getPointer()->getBurst_time() - iter->getPointer()->getCurrent_burst_time() > curr->getBurst_time())
+							{
+								curr->setPointer(iter->getPointer());
+								iter->setPointer(curr);
+								break;
+							}
+						}
+						else
+						{
+							curr->setPointer(iter->getPointer());
+							iter->setPointer(curr);
+							readyQueue.tail = curr;
+							break;
+						}
+					}
+				}
+			}
+			curr->setPstate(READY);
+			readyQueueCounter++;
+		}
+	}
+}
 
 
 void Scheduler::admitted()
@@ -137,6 +348,26 @@ void Scheduler::scheduler_dispatch()
 	}
 }
 
+
+void Scheduler::SJF_interrupt()
+{
+	if (runningPCB != NULL)
+	{
+		if (readyQueue.head != NULL)
+		{
+			runningPCB->setPointer(readyQueue.head);
+			readyQueue.head = runningPCB;
+		}
+		else
+		{
+			readyQueue.head = runningPCB;
+			readyQueue.tail = runningPCB;
+		}
+		runningPCB->setPstate(READY);
+		readyQueueCounter++;
+		runningPCB = NULL;
+	}
+}
 
 
 void Scheduler::interrupt()
@@ -228,8 +459,11 @@ void Scheduler::printProcess()
 {
 	queue<PCB*> copy_job_queue = jobQueue;
 	cout << "Running : ";
-	if(runningPCB != NULL)
+	if (runningPCB != NULL)
+	{
 		cout << runningPCB->getPname();
+		cout << " (" << runningPCB->getCurrent_burst_time() << "/" << runningPCB->getBurst_time() << ") completed...";
+	}
 	cout << endl;
 
 	cout << "Ready : ";
@@ -263,4 +497,5 @@ void Scheduler::printProcess()
 				cout << ", ";
 		}
 	}
+	cout << endl << endl;
 }	
