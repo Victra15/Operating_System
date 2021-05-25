@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <queue>
 #include "Process.h"
 
 using namespace std;
@@ -17,6 +18,7 @@ public:
 	Bankers();
 	~Bankers();
 	void find_safe_sequence();
+	void ResourceAllocation(const char* processName, int* request);
 	void print();
 };
 

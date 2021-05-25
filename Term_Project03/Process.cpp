@@ -1,7 +1,8 @@
 #include "Process.h"
 
-Process::Process(int _resourceTypeCnt, int* _maxResource, int* _allocatedResource)
+Process::Process(const char* _processName, int _resourceTypeCnt, int* _maxResource, int* _allocatedResource)
 {
+	processName = _processName;
 	resourceTypeCnt = _resourceTypeCnt;
 	maxResource = _maxResource;
 	allocatedResource = _allocatedResource;
@@ -27,4 +28,9 @@ int* Process::getMaxResouce()
 int* Process::getAllocatedResource()
 {
 	return allocatedResource;
+}
+
+const char* Process::getProcessName()
+{
+	return processName;
 }
